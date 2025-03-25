@@ -1,43 +1,45 @@
-import tkinter as tk
-from tkinter import ttk
+import customtkinter as ctk
 
 # ---------------- Main Application Window ----------------
-root = tk.Tk()
+ctk.set_appearance_mode("dark")  # Dark Mode
+root = ctk.CTk()
 root.title("Film Booking - Previous Bookings")
 root.geometry("1200x600")  # Fixed window size
 root.resizable(False, False)  # Prevent resizing
-root.configure(bg="black")  # Dark mode theme
 
 # ---------------- Sidebar (Red Navigation Panel) ----------------
-sidebar = tk.Frame(root, bg="#d92525", width=250, height=600)
+sidebar = ctk.CTkFrame(root, fg_color="#d92525", width=250, height=600)
 sidebar.pack(side="left", fill="y")
 
 # Sidebar Title
-tk.Label(sidebar, text="Film Booking", font=("Arial", 18, "bold"), fg="white", bg="#d92525").pack(pady=20, padx=20, anchor="w")
+ctk.CTkLabel(sidebar, text="🎬 Film Booking", font=("Arial", 18, "bold"), text_color="white").pack(pady=20, padx=20, anchor="w")
 
 # Sidebar Buttons
 menu_items = [
-    ("🏠  Home", "home"),
-    ("📅  Previous Bookings", "bookings"),
-    ("👤  Profile", "profile"),
-    ("ℹ️  About", "about"),
+    "🏠 Home",
+    "📅 Previous Bookings",
+    "👤 Profile",
+    "ℹ️ About",
 ]
-for item, cmd in menu_items:
-    btn = tk.Button(sidebar, text=item, font=("Arial", 12), fg="white", bg="#d92525",
-                    relief="flat", anchor="w", padx=20, activebackground="#b71c1c", bd=0)
+
+for item in menu_items:
+    btn = ctk.CTkButton(sidebar, text=item, font=("Arial", 14),
+                        fg_color="transparent", text_color="white",
+                        anchor="w", corner_radius=0, hover_color="#b71c1c", height=40)
     btn.pack(fill="x", pady=3)
 
 # Logout Button
-logout_btn = tk.Button(sidebar, text="📤  Logout", font=("Arial", 12), fg="white", bg="#d92525",
-                       relief="flat", anchor="w", padx=20, activebackground="#b71c1c", bd=0)
+logout_btn = ctk.CTkButton(sidebar, text="📤 Logout", font=("Arial", 14),
+                           fg_color="transparent", text_color="white",
+                           anchor="w", corner_radius=0, hover_color="#b71c1c", height=40)
 logout_btn.pack(fill="x", pady=20, side="bottom")
 
 # ---------------- Main Content ----------------
-main_content = tk.Frame(root, bg="black")
+main_content = ctk.CTkFrame(root, fg_color="black")
 main_content.pack(side="right", fill="both", expand=True, padx=20, pady=20)
 
 # Title
-tk.Label(main_content, text="Your Previous Bookings", font=("Arial", 18, "bold"), fg="white", bg="black").pack(anchor="w", pady=10)
+ctk.CTkLabel(main_content, text="🎟 Your Previous Bookings", font=("Arial", 20, "bold"), text_color="white").pack(anchor="w", pady=10)
 
 # ---------------- Movie Booking Cards ----------------
 bookings = [
@@ -47,18 +49,22 @@ bookings = [
 ]
 
 for movie, theater, date, time, seats in bookings:
-    card_frame = tk.Frame(main_content, bg="#1a1a1a", padx=10, pady=10)
-    card_frame.pack(fill="x", pady=10)
+    card_frame = ctk.CTkFrame(main_content, fg_color="#1a1a1a", corner_radius=10)
+    card_frame.pack(fill="x", pady=10, padx=10)
 
-    tk.Label(card_frame, text=movie, font=("Arial", 12, "bold"), fg="white", bg="#1a1a1a").pack(anchor="w")
-    tk.Label(card_frame, text=f"Theater: {theater}", font=("Arial", 10), fg="gray", bg="#1a1a1a").pack(anchor="w")
-    tk.Label(card_frame, text=f"Date: {date}", font=("Arial", 10), fg="gray", bg="#1a1a1a").pack(anchor="w")
-    tk.Label(card_frame, text=f"Time: {time}", font=("Arial", 10), fg="gray", bg="#1a1a1a").pack(anchor="w")
-    tk.Label(card_frame, text=f"Seats: {seats}", font=("Arial", 10), fg="gray", bg="#1a1a1a").pack(anchor="w")
+    text_frame = ctk.CTkFrame(card_frame, fg_color="#1a1a1a")
+    text_frame.pack(side="left", padx=15, pady=10, fill="both", expand=True)
 
-    view_btn = tk.Button(card_frame, text="View Ticket", font=("Arial", 10, "bold"), fg="white", bg="red",
-                         relief="flat", padx=10, pady=2, activebackground="#b71c1c")
-    view_btn.pack(anchor="e", pady=5)
+    ctk.CTkLabel(text_frame, text=movie, font=("Arial", 14, "bold"), text_color="white").pack(anchor="w")
+    ctk.CTkLabel(text_frame, text=f"Theater: {theater}", font=("Arial", 12), text_color="gray").pack(anchor="w")
+    ctk.CTkLabel(text_frame, text=f"Date: {date}", font=("Arial", 12), text_color="gray").pack(anchor="w")
+    ctk.CTkLabel(text_frame, text=f"Time: {time}", font=("Arial", 12), text_color="gray").pack(anchor="w")
+    ctk.CTkLabel(text_frame, text=f"Seats: {seats}", font=("Arial", 12), text_color="gray").pack(anchor="w")
+
+    view_btn = ctk.CTkButton(card_frame, text="🎫 View Ticket", font=("Arial", 12, "bold"),
+                             fg_color="red", text_color="white",
+                             hover_color="#b71c1c", corner_radius=5, width=120)
+    view_btn.pack(side="right", padx=20, pady=15)
 
 # ---------------- Run Application ----------------
 root.mainloop()

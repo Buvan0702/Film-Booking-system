@@ -1,46 +1,50 @@
-import tkinter as tk
-from tkinter import ttk
+import customtkinter as ctk
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 # ---------------- Main Application Window ----------------
-root = tk.Tk()
+ctk.set_appearance_mode("dark")  # Dark Mode
+root = ctk.CTk()
 root.title("Film Booking - Admin Dashboard")
 root.geometry("1100x600")  # Fixed window size
 root.resizable(False, False)  # Prevent resizing
-root.configure(bg="black")  # Dark mode theme
 
 # ---------------- Sidebar (Red Navigation Panel) ----------------
-sidebar = tk.Frame(root, bg="#d92525", width=250, height=600)
+sidebar = ctk.CTkFrame(root, fg_color="#d92525", width=250, height=600)
 sidebar.pack(side="left", fill="y")
 
 # Sidebar Title
-tk.Label(sidebar, text="Film Booking", font=("Arial", 18, "bold"), fg="white", bg="#d92525").pack(pady=20, padx=20, anchor="w")
+ctk.CTkLabel(sidebar, text="🎬 Film Booking", font=("Arial", 18, "bold"), text_color="white").pack(pady=20, padx=20, anchor="w")
 
 # Sidebar Buttons
 menu_items = [
-    ("📅  Admin Dashboard", "dashboard"),
-    ("🎟  Manage Bookings", "bookings"),
-    ("👤  Manage Users", "users"),
-    ("ℹ️  About", "about"),
+    "📅 Admin Dashboard",
+    "🎟 Manage Bookings",
+    "👤 Manage Users",
+    "ℹ️ About",
 ]
-for item, cmd in menu_items:
-    btn = tk.Button(sidebar, text=item, font=("Arial", 12), fg="white", bg="#d92525",
-                    relief="flat", anchor="w", padx=20, activebackground="#b71c1c", bd=0)
+
+for item in menu_items:
+    btn = ctk.CTkButton(sidebar, text=item, font=("Arial", 14),
+                        fg_color="transparent", text_color="white",
+                        anchor="w", corner_radius=0, hover_color="#b71c1c", height=40)
     btn.pack(fill="x", pady=3)
 
 # Logout Button
-logout_btn = tk.Button(sidebar, text="📤  Logout", font=("Arial", 12), fg="white", bg="#d92525",
-                       relief="flat", anchor="w", padx=20, activebackground="#b71c1c", bd=0)
+logout_btn = ctk.CTkButton(sidebar, text="📤 Logout", font=("Arial", 14),
+                           fg_color="transparent", text_color="white",
+                           anchor="w", corner_radius=0, hover_color="#b71c1c", height=40)
 logout_btn.pack(fill="x", pady=20, side="bottom")
 
 # ---------------- Main Content ----------------
-main_content = tk.Frame(root, bg="black")
+main_content = ctk.CTkFrame(root, fg_color="black")
 main_content.pack(side="right", fill="both", expand=True, padx=20, pady=20)
 
 # Header Title
-tk.Label(main_content, text="Admin Dashboard Overview", font=("Arial", 20, "bold"), fg="white", bg="black").pack(anchor="w", pady=5)
+ctk.CTkLabel(main_content, text="📊 Admin Dashboard Overview", font=("Arial", 22, "bold"), text_color="white").pack(anchor="w", pady=5)
 
 # ---------------- Top Analytics Cards ----------------
-analytics_frame = tk.Frame(main_content, bg="black")
+analytics_frame = ctk.CTkFrame(main_content, fg_color="black")
 analytics_frame.pack(fill="x", pady=10)
 
 cards = [
@@ -50,27 +54,40 @@ cards = [
 ]
 
 for title, value, color, subtitle in cards:
-    card = tk.Frame(analytics_frame, bg="gray15", padx=20, pady=10, height=80)
+    card = ctk.CTkFrame(analytics_frame, fg_color="gray15", corner_radius=10, height=100)
     card.pack(side="left", expand=True, padx=10, fill="both")
 
-    tk.Label(card, text=title, font=("Arial", 12, "bold"), fg="white", bg="gray15").pack(anchor="w")
-    tk.Label(card, text=value, font=("Arial", 16, "bold"), fg=color, bg="gray15").pack(anchor="w")
+    ctk.CTkLabel(card, text=title, font=("Arial", 12, "bold"), text_color="white").pack(anchor="w", padx=10, pady=5)
+    ctk.CTkLabel(card, text=value, font=("Arial", 16, "bold"), text_color=color).pack(anchor="w", padx=10)
     if subtitle:
-        tk.Label(card, text=subtitle, font=("Arial", 10), fg="gray", bg="gray15").pack(anchor="w")
+        ctk.CTkLabel(card, text=subtitle, font=("Arial", 10), text_color="gray").pack(anchor="w", padx=10)
 
 # ---------------- Graphs Section ----------------
-graph_frame = tk.Frame(main_content, bg="black")
-graph_frame.pack(fill="x", pady=20)
+graph_frame = ctk.CTkFrame(main_content, fg_color="black")
+graph_frame.pack(fill="both", pady=20)
 
-graphs = ["Ticket Sales Over Time", "Most Watched Genres"]
+# Matplotlib Graphs
+def create_chart(frame, title, x_data, y_data, color):
+    fig, ax = plt.subplots(figsize=(4, 2))
+    ax.bar(x_data, y_data, color=color)
+    ax.set_title(title, fontsize=10, color="white")
+    ax.tick_params(colors="white")
+    fig.patch.set_facecolor("black")
+    ax.set_facecolor("black")
 
-for graph in graphs:
-    graph_card = tk.Frame(graph_frame, bg="gray15", padx=20, pady=10, height=180)
-    graph_card.pack(side="left", expand=True, padx=10, fill="both")
+    canvas = FigureCanvasTkAgg(fig, master=frame)
+    canvas.get_tk_widget().pack(fill="both", expand=True)
+    canvas.draw()
 
-    tk.Label(graph_card, text=graph, font=("Arial", 12, "bold"), fg="white", bg="gray15").pack(anchor="w")
-    tk.Label(graph_card, text="400 × 200", font=("Arial", 16), fg="gray", bg="gray35",
-             width=20, height=6, relief="solid").pack(pady=10)
+# Sales Chart
+sales_frame = ctk.CTkFrame(graph_frame, fg_color="gray15", corner_radius=10, height=200)
+sales_frame.pack(side="left", expand=True, padx=10, fill="both")
+create_chart(sales_frame, "🎟 Ticket Sales Over Time", ["Week 1", "Week 2", "Week 3", "Week 4"], [1200, 1500, 1300, 1800], "red")
+
+# Genre Popularity Chart
+genre_frame = ctk.CTkFrame(graph_frame, fg_color="gray15", corner_radius=10, height=200)
+genre_frame.pack(side="left", expand=True, padx=10, fill="both")
+create_chart(genre_frame, "🎬 Most Watched Genres", ["Action", "Drama", "Comedy", "Sci-Fi"], [3400, 2900, 2500, 2700], "yellow")
 
 # ---------------- Run Application ----------------
 root.mainloop()

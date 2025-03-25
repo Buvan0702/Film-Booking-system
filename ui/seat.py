@@ -1,62 +1,68 @@
-import tkinter as tk
-from tkinter import ttk
+import customtkinter as ctk
 
 # ---------------- Main Application Window ----------------
-root = tk.Tk()
+ctk.set_appearance_mode("dark")  # Dark Mode
+root = ctk.CTk()
 root.title("Film Booking - Select Your Seats")
 root.geometry("1200x600")  # Fixed window size
 root.resizable(False, False)  # Prevent resizing
-root.configure(bg="black")  # Dark mode theme
 
 # ---------------- Sidebar (Red Navigation Panel) ----------------
-sidebar = tk.Frame(root, bg="#d92525", width=250, height=600)
+sidebar = ctk.CTkFrame(root, fg_color="#d92525", width=250, height=600)
 sidebar.pack(side="left", fill="y")
 
 # Sidebar Title
-tk.Label(sidebar, text="Film Booking", font=("Arial", 18, "bold"), fg="white", bg="#d92525").pack(pady=20, padx=20, anchor="w")
+ctk.CTkLabel(sidebar, text="Film Booking", font=("Arial", 18, "bold"), text_color="white").pack(pady=20, padx=20, anchor="w")
 
 # Sidebar Buttons
 menu_items = [
-    ("🏠  Home", "home"),
-    ("📅  Previous Bookings", "bookings"),
-    ("👤  Profile", "profile"),
-    ("ℹ️  About", "about"),
+    "🏠  Home",
+    "📅  Previous Bookings",
+    "👤  Profile",
+    "ℹ️  About",
 ]
-for item, cmd in menu_items:
-    btn = tk.Button(sidebar, text=item, font=("Arial", 12), fg="white", bg="#d92525",
-                    relief="flat", anchor="w", padx=20, activebackground="#b71c1c", bd=0)
+for item in menu_items:
+    btn = ctk.CTkButton(sidebar, text=item, font=("Arial", 14),
+                        fg_color="transparent", text_color="white",
+                        anchor="w", corner_radius=0, hover_color="#b71c1c", height=40)
     btn.pack(fill="x", pady=3)
 
 # Logout Button
-logout_btn = tk.Button(sidebar, text="📤  Logout", font=("Arial", 12), fg="white", bg="#d92525",
-                       relief="flat", anchor="w", padx=20, activebackground="#b71c1c", bd=0)
+logout_btn = ctk.CTkButton(sidebar, text="📤  Logout", font=("Arial", 14),
+                           fg_color="transparent", text_color="white",
+                           anchor="w", corner_radius=0, hover_color="#b71c1c", height=40)
 logout_btn.pack(fill="x", pady=20, side="bottom")
 
 # ---------------- Main Content ----------------
-main_content = tk.Frame(root, bg="black")
+main_content = ctk.CTkFrame(root, fg_color="black")
 main_content.pack(side="right", fill="both", expand=True, padx=20, pady=20)
 
 # Title
-tk.Label(main_content, text="Select Your Seats", font=("Arial", 18, "bold"), fg="white", bg="black").pack(anchor="n", pady=5)
+ctk.CTkLabel(main_content, text="Select Your Seats", font=("Arial", 22, "bold"), text_color="white").pack(anchor="n", pady=5)
 
 # Sub-title (Show Timings)
-tk.Label(main_content, text="Show Timings:", font=("Arial", 12, "bold"), fg="white", bg="black").pack(anchor="n")
+ctk.CTkLabel(main_content, text="Show Timings:", font=("Arial", 14, "bold"), text_color="white").pack(anchor="n")
 
 # Show Timings Buttons
-timing_frame = tk.Frame(main_content, bg="black")
+timing_frame = ctk.CTkFrame(main_content, fg_color="black")
 timing_frame.pack(pady=5)
 
 show_timings = ["1:00 PM", "3:30 PM", "6:00 PM", "8:30 PM"]
+selected_time = ctk.StringVar(value=show_timings[0])
+
 for time in show_timings:
-    btn = tk.Button(timing_frame, text=time, font=("Arial", 10, "bold"), fg="white", bg="red",
-                    relief="flat", padx=15, pady=5, activebackground="#b71c1c")
+    btn = ctk.CTkButton(timing_frame, text=time, font=("Arial", 12, "bold"),
+                        fg_color="red", text_color="white", hover_color="#b71c1c",
+                        width=80, height=30,
+                        command=lambda t=time: selected_time.set(t))
     btn.pack(side="left", padx=10)
 
 # Screen Label
-tk.Label(main_content, text="SCREEN", font=("Arial", 12, "bold"), fg="white", bg="red", width=50, pady=5).pack(pady=10)
+ctk.CTkLabel(main_content, text="SCREEN", font=("Arial", 14, "bold"), text_color="white",
+             fg_color="red", width=450, height=30, corner_radius=10).pack(pady=10)
 
 # ---------------- Seats Layout ----------------
-seat_frame = tk.Frame(main_content, bg="black")
+seat_frame = ctk.CTkFrame(main_content, fg_color="black")
 seat_frame.pack()
 
 seat_layout = [
@@ -75,18 +81,36 @@ seat_status = {
     "B3": "selected", "B6": "unavailable", "B10": "unavailable"
 }
 
+selected_seats = set()
+
+# Function to handle seat selection
+def toggle_seat(seat, button):
+    if seat_status.get(seat, "available") == "unavailable":
+        return  # Ignore clicks on unavailable seats
+    
+    if seat in selected_seats:
+        selected_seats.remove(seat)
+        button.configure(fg_color=seat_colors["available"])  # Reset to Green
+    else:
+        selected_seats.add(seat)
+        button.configure(fg_color=seat_colors["selected"])  # Change to Yellow
+
 for row in seat_layout:
-    row_frame = tk.Frame(seat_frame, bg="black")
+    row_frame = ctk.CTkFrame(seat_frame, fg_color="black")
     row_frame.pack()
     for seat in row:
         color = seat_colors.get(seat_status.get(seat, "available"))  # Default to "available" (Green)
-        btn = tk.Button(row_frame, text=seat, font=("Arial", 10, "bold"), fg="white", bg=color,
-                        relief="flat", padx=10, pady=5, activebackground=color)
+        btn = ctk.CTkButton(row_frame, text=seat, font=("Arial", 12, "bold"),
+                            fg_color=color, text_color="white", hover_color=color,
+                            width=50, height=40,
+                            command=lambda s=seat, b=None: toggle_seat(s, b))
         btn.pack(side="left", padx=5, pady=5)
+        btn.command = lambda s=seat, b=btn: toggle_seat(s, b)  # Fix command issue
 
 # ---------------- Proceed to Checkout Button ----------------
-checkout_btn = tk.Button(main_content, text="Proceed to Checkout", font=("Arial", 12, "bold"), fg="white", bg="red",
-                         relief="flat", padx=20, pady=8, activebackground="#b71c1c")
+checkout_btn = ctk.CTkButton(main_content, text="🎟️ Proceed to Checkout", font=("Arial", 14, "bold"),
+                             fg_color="red", text_color="white", hover_color="#b71c1c",
+                             corner_radius=10, height=40)
 checkout_btn.pack(pady=20)
 
 # ---------------- Run Application ----------------
