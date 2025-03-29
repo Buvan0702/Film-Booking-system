@@ -1,5 +1,68 @@
 import customtkinter as ctk
 from PIL import Image, ImageTk
+import mysql.connector
+import hashlib
+from tkinter import messagebox
+import subprocess  # To open another Python script
+
+# ------------------- Database Connection -------------------
+def connect_db():
+    return mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="new_password",  # Replace with your MySQL password
+        database="film_booking"
+    )
+
+# ------------------- Password Hashing -------------------
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+# ------------------- Register User Function -------------------
+def register_user():
+    first_name = first_name_entry.get()
+    last_name = last_name_entry.get()
+    email = email_entry.get()
+    password = password_entry.get()
+
+    if not first_name or not last_name or not email or not password:
+        messagebox.showwarning("Input Error", "All fields are required.")
+        return
+
+    hashed_password = hash_password(password)
+
+    try:
+        connection = connect_db()
+        cursor = connection.cursor()
+        
+        cursor.execute(
+            "INSERT INTO Users (first_name, last_name, email, password, role) VALUES (%s, %s, %s, %s, %s)",
+            (first_name, last_name, email, hashed_password, "user")
+        )
+        
+        connection.commit()
+        messagebox.showinfo("Success", "User registered successfully!")
+        
+        # Clear the input fields
+        first_name_entry.delete(0, ctk.END)
+        last_name_entry.delete(0, ctk.END)
+        email_entry.delete(0, ctk.END)
+        password_entry.delete(0, ctk.END)
+        
+    except mysql.connector.Error as err:
+        messagebox.showerror("Database Error", str(err))
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
+# ------------------- Open Login Page -------------------
+def open_login():
+    try:
+        subprocess.Popen(["python", "login.py"])  # Ensure 'login.py' is in the same folder
+        root.destroy()  # Close the current signup window
+    except Exception as e:
+        messagebox.showerror("Error", f"Unable to open login page: {e}")
 
 # ---------------- Main Application Window ----------------
 ctk.set_appearance_mode("light")  # Set light mode
@@ -43,7 +106,7 @@ password_entry.pack(fill="x", pady=2)
 
 # Sign Up Button
 signup_btn = ctk.CTkButton(left_frame, text="Sign Up", font=("Arial", 11, "bold"),
-                           fg_color="black", text_color="white", height=40, hover_color="gray")
+                           fg_color="black", text_color="white", height=40, hover_color="gray", command=register_user)
 signup_btn.pack(fill="x", pady=(15, 5))
 
 # Already Have an Account? Log In Link
@@ -54,6 +117,7 @@ ctk.CTkLabel(bottom_frame, text="Already have an account?", font=("Arial", 9), t
 
 login_link = ctk.CTkLabel(bottom_frame, text="Log In", font=("Arial", 9, "bold"), text_color="white", cursor="hand2")
 login_link.pack(side="left")
+login_link.bind("<Button-1>", lambda e: open_login())  # Opens login page when clicked
 
 # ---------------- Right Side - Image ----------------
 right_frame = ctk.CTkFrame(container, fg_color="#d92525", width=350, height=350)

@@ -1,5 +1,66 @@
 import customtkinter as ctk
 from PIL import Image, ImageTk
+import mysql.connector
+import hashlib
+from tkinter import messagebox
+import subprocess  # To open another Python script
+
+# ------------------- Database Connection -------------------
+def connect_db():
+    return mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="new_password",  # Replace with your MySQL password
+        database="film_booking"
+    )
+
+# ------------------- Password Hashing -------------------
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+# ------------------- Login Function -------------------
+def login_user():
+    email = email_entry.get()
+    password = password_entry.get()
+
+    if not email or not password:
+        messagebox.showwarning("Input Error", "Please enter both email and password.")
+        return
+
+    hashed_password = hash_password(password)
+
+    try:
+        connection = connect_db()
+        cursor = connection.cursor()
+        
+        cursor.execute(
+            "SELECT first_name, last_name FROM Users WHERE email = %s AND password = %s",
+            (email, hashed_password)
+        )
+        
+        user = cursor.fetchone()
+        
+        if user:
+            first_name, last_name = user
+            messagebox.showinfo("Success", f"Welcome {first_name} {last_name}!")
+            root.destroy()  # Close the login window upon successful login
+        else:
+            messagebox.showerror("Login Failed", "Invalid email or password.")
+    
+    except mysql.connector.Error as err:
+        messagebox.showerror("Database Error", str(err))
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
+# ------------------- Open Sign Up Page -------------------
+def open_signup():
+    try:
+        subprocess.Popen(["python", "signup.py"])  # Make sure 'signup.py' is in the same folder
+        root.destroy()  # Close the current login window
+    except Exception as e:
+        messagebox.showerror("Error", f"Unable to open signup page: {e}")
 
 # ---------------- Main Application Window ----------------
 ctk.set_appearance_mode("light")  # Set light mode
@@ -33,7 +94,7 @@ password_entry.pack(fill="x", pady=2)
 
 # --- Login Button ---
 login_btn = ctk.CTkButton(left_frame, text="Login", font=("Arial", 11, "bold"), fg_color="black",
-                           text_color="white", height=40, hover_color="gray")
+                           text_color="white", height=40, hover_color="gray", command=login_user)
 login_btn.pack(fill="x", pady=(15, 5))
 
 # --- Sign Up & Forgot Password Links ---
@@ -44,6 +105,7 @@ ctk.CTkLabel(bottom_frame, text="Don't have an account?", font=("Arial", 9), tex
 
 signup_link = ctk.CTkLabel(bottom_frame, text="Sign Up", font=("Arial", 9, "bold"), text_color="white", cursor="hand2")
 signup_link.pack(side="left")
+signup_link.bind("<Button-1>", lambda e: open_signup())  # Opens signup page when clicked
 
 forgot_password = ctk.CTkLabel(left_frame, text="Forgot Password?", font=("Arial", 9), text_color="white", cursor="hand2")
 forgot_password.pack(anchor="center", pady=(5, 0))
