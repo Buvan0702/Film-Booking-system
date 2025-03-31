@@ -3,6 +3,7 @@ from PIL import Image, ImageTk
 import mysql.connector
 import hashlib
 from tkinter import messagebox
+import sys
 import subprocess  # To open another Python script
 
 # ------------------- Database Connection -------------------
@@ -43,7 +44,11 @@ def login_user():
         if user:
             first_name, last_name = user
             messagebox.showinfo("Success", f"Welcome {first_name} {last_name}!")
-            root.destroy()  # Close the login window upon successful login
+            
+            root.destroy()  # Close the login window
+            
+            # ✅ Open home.py after successful login
+            subprocess.Popen([sys.executable, "home.py"])
         else:
             messagebox.showerror("Login Failed", "Invalid email or password.")
     
@@ -54,10 +59,11 @@ def login_user():
             cursor.close()
             connection.close()
 
+
 # ------------------- Open Sign Up Page -------------------
 def open_signup():
     try:
-        subprocess.Popen(["python", "signup.py"])  # Make sure 'signup.py' is in the same folder
+        subprocess.Popen([sys.executable, "signup.py"])
         root.destroy()  # Close the current login window
     except Exception as e:
         messagebox.showerror("Error", f"Unable to open signup page: {e}")

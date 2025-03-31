@@ -2,7 +2,6 @@ import customtkinter as ctk
 from PIL import Image, ImageTk
 import mysql.connector
 import hashlib
-import sys
 from tkinter import messagebox
 import subprocess  # To open another Python script
 
@@ -19,15 +18,13 @@ def connect_db():
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
-# ------------------- Register User Function -------------------
-def register_user():
-    first_name = first_name_entry.get()
-    last_name = last_name_entry.get()
+# ------------------- Login Function -------------------
+def login_user():
     email = email_entry.get()
     password = password_entry.get()
 
-    if not first_name or not last_name or not email or not password:
-        messagebox.showwarning("Input Error", "All fields are required.")
+    if not email or not password:
+        messagebox.showwarning("Input Error", "Please enter both email and password.")
         return
 
     hashed_password = hash_password(password)
@@ -37,19 +34,20 @@ def register_user():
         cursor = connection.cursor()
         
         cursor.execute(
-            "INSERT INTO Users (first_name, last_name, email, password, role) VALUES (%s, %s, %s, %s, %s)",
-            (first_name, last_name, email, hashed_password, "user")
+            "SELECT first_name, last_name FROM Users WHERE email = %s AND password = %s",
+            (email, hashed_password)
         )
         
-        connection.commit()
-        messagebox.showinfo("Success", "User registered successfully!")
+        user = cursor.fetchone()
         
-        # Clear the input fields
-        first_name_entry.delete(0, ctk.END)
-        last_name_entry.delete(0, ctk.END)
-        email_entry.delete(0, ctk.END)
-        password_entry.delete(0, ctk.END)
-        
+        if user:
+            first_name, last_name = user
+            messagebox.showinfo("Success", f"Welcome {first_name} {last_name}!")
+            root.destroy()  # Close the login window upon successful login
+            open_home_page()  # Open the home page after login
+        else:
+            messagebox.showerror("Login Failed", "Invalid email or password.")
+    
     except mysql.connector.Error as err:
         messagebox.showerror("Database Error", str(err))
     finally:
@@ -57,19 +55,25 @@ def register_user():
             cursor.close()
             connection.close()
 
-# ------------------- Open Login Page -------------------
-def open_login():
+# ------------------- Open Sign Up Page -------------------
+def open_signup():
     try:
-        subprocess.Popen([sys.executable, "login.py"])
-  # Ensure 'login.py' is in the same folder
-        root.destroy()  # Close the current signup window
+        subprocess.Popen(["python", "signup.py"])  # Make sure 'signup.py' is in the same folder
+        root.destroy()  # Close the current login window
     except Exception as e:
-        messagebox.showerror("Error", f"Unable to open login page: {e}")
+        messagebox.showerror("Error", f"Unable to open signup page: {e}")
+
+# ------------------- Open Home Page -------------------
+def open_home_page():
+    try:
+        subprocess.Popen(["python", "home.py"])  # Open home.py when login is successful
+    except Exception as e:
+        messagebox.showerror("Error", f"Unable to open home page: {e}")
 
 # ---------------- Main Application Window ----------------
 ctk.set_appearance_mode("light")  # Set light mode
 root = ctk.CTk()
-root.title("Film Booking - Sign Up")
+root.title("Film Booking - Login")
 root.geometry("900x500")  # Fixed window size
 root.resizable(False, False)  # Prevent resizing
 
@@ -77,7 +81,7 @@ root.resizable(False, False)  # Prevent resizing
 container = ctk.CTkFrame(root, fg_color="#d92525")  # Red Background
 container.place(relx=0.5, rely=0.5, anchor="center")
 
-# ---------------- Left Side - Sign Up Form ----------------
+# ---------------- Left Side - Login Form ----------------
 left_frame = ctk.CTkFrame(container, fg_color="#d92525")
 left_frame.pack(side="left", fill="both", padx=20, pady=20)
 
@@ -86,40 +90,33 @@ ctk.CTkLabel(left_frame, text="Film Booking", font=("Arial", 18, "bold"), text_c
 ctk.CTkLabel(left_frame, text="Manage your movie bookings seamlessly.",
              font=("Arial", 10), text_color="white").pack(anchor="w", pady=5)
 
-# Name Entry Fields (Side by Side)
-name_frame = ctk.CTkFrame(left_frame, fg_color="#d92525")
-name_frame.pack(fill="x", pady=(10, 0))
-
-first_name_entry = ctk.CTkEntry(name_frame, placeholder_text="First Name", height=35)
-first_name_entry.pack(side="left", expand=True, padx=5, pady=2)
-
-last_name_entry = ctk.CTkEntry(name_frame, placeholder_text="Last Name", height=35)
-last_name_entry.pack(side="right", expand=True, padx=5, pady=2)
-
-# Email Entry
-ctk.CTkLabel(left_frame, text="Email", font=("Arial", 10, "bold"), text_color="white").pack(anchor="w", pady=(10, 0))
+# --- Email Entry ---
+ctk.CTkLabel(left_frame, text="Email", font=("Arial", 10, "bold"), text_color="white").pack(anchor="w", pady=(15, 0))
 email_entry = ctk.CTkEntry(left_frame, placeholder_text="Enter your email", height=35)
 email_entry.pack(fill="x", pady=2)
 
-# Password Entry
+# --- Password Entry ---
 ctk.CTkLabel(left_frame, text="Password", font=("Arial", 10, "bold"), text_color="white").pack(anchor="w", pady=(10, 0))
 password_entry = ctk.CTkEntry(left_frame, placeholder_text="Enter your password", show="*", height=35)
 password_entry.pack(fill="x", pady=2)
 
-# Sign Up Button
-signup_btn = ctk.CTkButton(left_frame, text="Sign Up", font=("Arial", 11, "bold"),
-                           fg_color="black", text_color="white", height=40, hover_color="gray", command=register_user)
-signup_btn.pack(fill="x", pady=(15, 5))
+# --- Login Button ---
+login_btn = ctk.CTkButton(left_frame, text="Login", font=("Arial", 11, "bold"), fg_color="black",
+                           text_color="white", height=40, hover_color="gray", command=login_user)
+login_btn.pack(fill="x", pady=(15, 5))
 
-# Already Have an Account? Log In Link
+# --- Sign Up & Forgot Password Links ---
 bottom_frame = ctk.CTkFrame(left_frame, fg_color="#d92525")
 bottom_frame.pack(fill="x")
 
-ctk.CTkLabel(bottom_frame, text="Already have an account?", font=("Arial", 9), text_color="white").pack(side="left")
+ctk.CTkLabel(bottom_frame, text="Don't have an account?", font=("Arial", 9), text_color="white").pack(side="left")
 
-login_link = ctk.CTkLabel(bottom_frame, text="Log In", font=("Arial", 9, "bold"), text_color="white", cursor="hand2")
-login_link.pack(side="left")
-login_link.bind("<Button-1>", lambda e: open_login())  # Opens login page when clicked
+signup_link = ctk.CTkLabel(bottom_frame, text="Sign Up", font=("Arial", 9, "bold"), text_color="white", cursor="hand2")
+signup_link.pack(side="left")
+signup_link.bind("<Button-1>", lambda e: open_signup())  # Opens signup page when clicked
+
+forgot_password = ctk.CTkLabel(left_frame, text="Forgot Password?", font=("Arial", 9), text_color="white", cursor="hand2")
+forgot_password.pack(anchor="center", pady=(5, 0))
 
 # ---------------- Right Side - Image ----------------
 right_frame = ctk.CTkFrame(container, fg_color="#d92525", width=350, height=350)
