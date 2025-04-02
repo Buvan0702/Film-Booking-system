@@ -5,6 +5,10 @@ import hashlib
 import sys
 from tkinter import messagebox
 import subprocess  # To open another Python script
+import os
+
+os.environ['TCL_LIBRARY'] = r"C:\Users\buvan\AppData\Local\Programs\Python\Python39\tcl\tcl8.6"
+os.environ['TK_LIBRARY'] = r"C:\Users\buvan\AppData\Local\Programs\Python\Python39\tcl\tk8.6"
 
 # ------------------- Database Connection -------------------
 def connect_db():
@@ -60,8 +64,7 @@ def register_user():
 # ------------------- Open Login Page -------------------
 def open_login():
     try:
-        subprocess.Popen([sys.executable, "login.py"])
-  # Ensure 'login.py' is in the same folder
+        subprocess.Popen([sys.executable, "login.py"])  # Ensure 'login.py' is in the same folder
         root.destroy()  # Close the current signup window
     except Exception as e:
         messagebox.showerror("Error", f"Unable to open login page: {e}")
@@ -70,70 +73,82 @@ def open_login():
 ctk.set_appearance_mode("light")  # Set light mode
 root = ctk.CTk()
 root.title("Film Booking - Sign Up")
-root.geometry("900x500")  # Fixed window size
+root.geometry("1000x700")  # Adjusted window size
 root.resizable(False, False)  # Prevent resizing
 
-# ---------------- Main Container Frame ----------------
-container = ctk.CTkFrame(root, fg_color="#d92525")  # Red Background
-container.place(relx=0.5, rely=0.5, anchor="center")
+# Set the background to red (#d92525)
+root.configure(fg_color="#d92525")
 
 # ---------------- Left Side - Sign Up Form ----------------
-left_frame = ctk.CTkFrame(container, fg_color="#d92525")
-left_frame.pack(side="left", fill="both", padx=20, pady=20)
+left_frame = ctk.CTkFrame(root, fg_color="#d92525", corner_radius=0)
+left_frame.pack(side="left", fill="both", expand=True, padx=(50, 20), pady=50)
 
 # Film Booking Title
-ctk.CTkLabel(left_frame, text="Film Booking", font=("Arial", 18, "bold"), text_color="white").pack(anchor="w")
+ctk.CTkLabel(left_frame, text="Film Booking", font=("Arial", 32, "bold"), text_color="white").pack(anchor="w", pady=(0, 5))
 ctk.CTkLabel(left_frame, text="Manage your movie bookings seamlessly.",
-             font=("Arial", 10), text_color="white").pack(anchor="w", pady=5)
+             font=("Arial", 14), text_color="white").pack(anchor="w", pady=(0, 30))
 
-# Name Entry Fields (Side by Side)
-name_frame = ctk.CTkFrame(left_frame, fg_color="#d92525")
-name_frame.pack(fill="x", pady=(10, 0))
+# First Name Label and Entry
+ctk.CTkLabel(left_frame, text="First Name", font=("Arial", 12), text_color="white").pack(anchor="w", pady=(0, 5))
+first_name_entry = ctk.CTkEntry(left_frame, placeholder_text="Enter your First Name", 
+                               height=40, fg_color="white", text_color="black",
+                               border_width=0, corner_radius=5)
+first_name_entry.pack(fill="x", pady=(0, 15))
 
-first_name_entry = ctk.CTkEntry(name_frame, placeholder_text="First Name", height=35)
-first_name_entry.pack(side="left", expand=True, padx=5, pady=2)
+# Last Name Label and Entry
+ctk.CTkLabel(left_frame, text="Last Name", font=("Arial", 12), text_color="white").pack(anchor="w", pady=(0, 5))
+last_name_entry = ctk.CTkEntry(left_frame, placeholder_text="Enter your Last Name", 
+                              height=40, fg_color="white", text_color="black",
+                              border_width=0, corner_radius=5)
+last_name_entry.pack(fill="x", pady=(0, 15))
 
-last_name_entry = ctk.CTkEntry(name_frame, placeholder_text="Last Name", height=35)
-last_name_entry.pack(side="right", expand=True, padx=5, pady=2)
+# Email Label and Entry
+ctk.CTkLabel(left_frame, text="Email", font=("Arial", 12), text_color="white").pack(anchor="w", pady=(0, 5))
+email_entry = ctk.CTkEntry(left_frame, placeholder_text="Enter your email", 
+                          height=40, fg_color="white", text_color="black",
+                          border_width=0, corner_radius=5)
+email_entry.pack(fill="x", pady=(0, 15))
 
-# Email Entry
-ctk.CTkLabel(left_frame, text="Email", font=("Arial", 10, "bold"), text_color="white").pack(anchor="w", pady=(10, 0))
-email_entry = ctk.CTkEntry(left_frame, placeholder_text="Enter your email", height=35)
-email_entry.pack(fill="x", pady=2)
+# Password Label and Entry
+ctk.CTkLabel(left_frame, text="Password", font=("Arial", 12), text_color="white").pack(anchor="w", pady=(0, 5))
+password_entry = ctk.CTkEntry(left_frame, placeholder_text="Enter your password", show="*", 
+                             height=40, fg_color="white", text_color="black",
+                             border_width=0, corner_radius=5)
+password_entry.pack(fill="x", pady=(0, 25))
 
-# Password Entry
-ctk.CTkLabel(left_frame, text="Password", font=("Arial", 10, "bold"), text_color="white").pack(anchor="w", pady=(10, 0))
-password_entry = ctk.CTkEntry(left_frame, placeholder_text="Enter your password", show="*", height=35)
-password_entry.pack(fill="x", pady=2)
-
-# Sign Up Button
-signup_btn = ctk.CTkButton(left_frame, text="Sign Up", font=("Arial", 11, "bold"),
-                           fg_color="black", text_color="white", height=40, hover_color="gray", command=register_user)
-signup_btn.pack(fill="x", pady=(15, 5))
+# Sign Up Button - Black with white text
+signup_btn = ctk.CTkButton(left_frame, text="Sign Up", font=("Arial", 14, "bold"),
+                          fg_color="black", text_color="white", height=40, 
+                          hover_color="#333333", corner_radius=5, command=register_user)
+signup_btn.pack(fill="x", pady=(5, 15))
 
 # Already Have an Account? Log In Link
-bottom_frame = ctk.CTkFrame(left_frame, fg_color="#d92525")
-bottom_frame.pack(fill="x")
+login_frame = ctk.CTkFrame(left_frame, fg_color="#d92525")
+login_frame.pack(fill="x")
 
-ctk.CTkLabel(bottom_frame, text="Already have an account?", font=("Arial", 9), text_color="white").pack(side="left")
-
-login_link = ctk.CTkLabel(bottom_frame, text="Log In", font=("Arial", 9, "bold"), text_color="white", cursor="hand2")
+ctk.CTkLabel(login_frame, text="Already have an account?  ", font=("Arial", 12), text_color="white").pack(side="left")
+login_link = ctk.CTkLabel(login_frame, text="Log In", font=("Arial", 12, "bold"), text_color="white", cursor="hand2")
 login_link.pack(side="left")
-login_link.bind("<Button-1>", lambda e: open_login())  # Opens login page when clicked
+login_link.bind("<Button-1>", lambda e: open_login())
 
 # ---------------- Right Side - Image ----------------
-right_frame = ctk.CTkFrame(container, fg_color="#d92525", width=350, height=350)
-right_frame.pack(side="right", fill="both")
+right_frame = ctk.CTkFrame(root, fg_color="#d92525", corner_radius=0)
+right_frame.pack(side="right", fill="both", expand=True, padx=30, pady=50)
 
-# Load and Display Image (Replace 'cinema.png' with your actual image file)
+# Load the image of a person watching a movie
 try:
-    image = Image.open("cinema.png")  # Load your movie booking image
-    image = image.resize((200, 200), Image.Resampling.LANCZOS)  # Resize image
+    # Replace this with the path to your movie viewer image
+    image = Image.open("movie_viewer.png")  
+    # Resize to fit the frame
+    image = image.resize((300, 300), Image.LANCZOS)
     movie_img = ImageTk.PhotoImage(image)
     img_label = ctk.CTkLabel(right_frame, image=movie_img, text="")
     img_label.place(relx=0.5, rely=0.5, anchor="center")
 except Exception as e:
-    print("Image not found. Please add 'cinema.png' to the project folder.")
+    # If image not found, display a placeholder
+    placeholder = ctk.CTkLabel(right_frame, text="Movie Viewer Image\n(Place movie_viewer.png in the same folder)", 
+                              font=("Arial", 14), text_color="white")
+    placeholder.place(relx=0.5, rely=0.5, anchor="center")
 
 # ---------------- Run Application ----------------
 root.mainloop()

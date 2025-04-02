@@ -4,6 +4,10 @@ import mysql.connector
 import hashlib
 from tkinter import messagebox
 import subprocess  # To open another Python script
+import os
+
+os.environ['TCL_LIBRARY'] = r"C:\Users\buvan\AppData\Local\Programs\Python\Python39\tcl\tcl8.6"
+os.environ['TK_LIBRARY'] = r"C:\Users\buvan\AppData\Local\Programs\Python\Python39\tcl\tk8.6"
 
 # ------------------- Database Connection -------------------
 def connect_db():
