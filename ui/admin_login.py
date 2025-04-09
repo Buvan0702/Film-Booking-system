@@ -9,22 +9,22 @@ import subprocess
 import os
 import re
 
-# Database Configuration
-DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': 'new_password',  # Replace with your actual MySQL password
-    'database': 'film_booking'
-}
-
-class LoginApp:
+class AdminLoginApp:
     def __init__(self):
+        # Database Configuration
+        self.DB_CONFIG = {
+            'host': 'localhost',
+            'user': 'root',
+            'password': 'new_password',  # Replace with your actual MySQL password
+            'database': 'film_booking'
+        }
+
         # Configure CustomTkinter
-        ctk.set_appearance_mode("light")
+        ctk.set_appearance_mode("dark")
         
         # Main Window
         self.root = ctk.CTk()
-        self.root.title("Film Booking - Login")
+        self.root.title("Film Booking - Admin Login")
         self.root.geometry("900x500")
         self.root.resizable(False, False)
         
@@ -50,16 +50,22 @@ class LoginApp:
         ctk.CTkLabel(form_frame, text="Film Booking", 
                      font=("Arial", 28, "bold"), 
                      text_color="white").pack(anchor="w")
-        ctk.CTkLabel(form_frame, text="Manage your movie bookings seamlessly.",
+        ctk.CTkLabel(form_frame, text="Admin Panel Access",
                      font=("Arial", 14), 
                      text_color="white").pack(anchor="w", pady=(2, 25))
+
+        # Warning/Info text
+        ctk.CTkLabel(form_frame, 
+                    text="⚠️ Restricted Area - Admin Access Only", 
+                    font=("Arial", 14, "bold"), 
+                    text_color="#FFD700").pack(anchor="w", pady=(0, 20))
 
         # Email Entry
         ctk.CTkLabel(form_frame, text="Email", 
                      font=("Arial", 14), 
                      text_color="white").pack(anchor="w", pady=(10, 5))
         self.email_entry = ctk.CTkEntry(form_frame, 
-                                        placeholder_text="Enter your email", 
+                                        placeholder_text="Enter admin email", 
                                         height=40, 
                                         fg_color="white", 
                                         text_color="black", 
@@ -76,7 +82,7 @@ class LoginApp:
         password_frame.pack(fill="x", pady=2)
         
         self.password_entry = ctk.CTkEntry(password_frame, 
-                                          placeholder_text="Enter your password", 
+                                          placeholder_text="Enter admin password", 
                                           show="*", 
                                           height=40,
                                           fg_color="white", 
@@ -95,56 +101,37 @@ class LoginApp:
                                         command=self.toggle_password_visibility)
         self.toggle_btn.pack(side="right", padx=(5, 0))
 
-        # Remember me checkbox
-        self.remember_var = tk.IntVar()
-        remember_check = ctk.CTkCheckBox(form_frame, 
-                                         text="Remember me", 
-                                         text_color="white",
-                                         variable=self.remember_var,
-                                         fg_color="black",
-                                         hover_color="#333333")
-        remember_check.pack(anchor="w", pady=(10, 5))
-
         # Login Button
         login_btn = ctk.CTkButton(form_frame, 
-                                  text="Login", 
+                                  text="Admin Login", 
                                   font=("Arial", 14, "bold"), 
                                   fg_color="black", 
                                   text_color="white", 
                                   height=40, 
                                   hover_color="#333333", 
                                   corner_radius=5,
-                                  command=self.login_user)
-        login_btn.pack(fill="x", pady=(15, 10))
+                                  command=self.login_admin)
+        login_btn.pack(fill="x", pady=(25, 15))
         
         # Bind Enter key to login
-        self.root.bind('<Return>', lambda event: self.login_user())
+        self.root.bind('<Return>', lambda event: self.login_admin())
 
-        # Signup Section
-        signup_frame = ctk.CTkFrame(form_frame, fg_color="#d92525")
-        signup_frame.pack(fill="x")
+        # Back to user login
+        back_frame = ctk.CTkFrame(form_frame, fg_color="#d92525")
+        back_frame.pack(fill="x", pady=(20, 0))
 
-        ctk.CTkLabel(signup_frame, 
-                     text="Don't have an account? ", 
+        ctk.CTkLabel(back_frame, 
+                     text="Not an admin? ", 
                      font=("Arial", 12), 
                      text_color="white").pack(side="left")
         
-        signup_link = ctk.CTkLabel(signup_frame, 
-                                   text="Sign Up", 
+        user_login_link = ctk.CTkLabel(back_frame, 
+                                   text="User Login", 
                                    font=("Arial", 12, "bold"), 
                                    text_color="white", 
                                    cursor="hand2")
-        signup_link.pack(side="left")
-        signup_link.bind("<Button-1>", lambda e: self.open_signup())
-
-        # Forgot Password
-        forgot_password = ctk.CTkLabel(form_frame, 
-                                       text="Forgot Password?", 
-                                       font=("Arial", 12), 
-                                       text_color="white", 
-                                       cursor="hand2")
-        forgot_password.pack(anchor="center", pady=(10, 0))
-        forgot_password.bind("<Button-1>", lambda e: self.forgot_password())
+        user_login_link.pack(side="left")
+        user_login_link.bind("<Button-1>", lambda e: self.open_user_login())
 
         # Right Side - Image
         self.create_image_side()
@@ -167,12 +154,14 @@ class LoginApp:
 
         # Try to load and resize image
         try:
-            # Check if image exists
-            if not os.path.exists("cinema.png"):
-                raise FileNotFoundError("cinema.png not found")
+            # Check if image exists (using admin-specific image if available)
+            image_path = "admin_login.png" if os.path.exists("admin_login.png") else "cinema.png"
+            
+            if not os.path.exists(image_path):
+                raise FileNotFoundError(f"{image_path} not found")
                 
             # Open the original image
-            original_image = Image.open("cinema.png")
+            original_image = Image.open(image_path)
             
             # Get the frame dimensions
             frame_width = 300  # Matches the form frame width
@@ -205,13 +194,15 @@ class LoginApp:
         
         except Exception as e:
             print(f"Image processing error: {e}")
-            placeholder = ctk.CTkLabel(image_frame, 
-                                       text="[Cinema Image]", 
-                                       font=("Arial", 20), 
-                                       text_color="white")
-            placeholder.place(relx=0.5, rely=0.5, anchor="center")
+            # Admin badge placeholder
+            admin_badge = ctk.CTkLabel(image_frame, 
+                                     text="ADMIN\nACCESS", 
+                                     font=("Arial", 32, "bold"), 
+                                     text_color="white")
+            admin_badge.place(relx=0.5, rely=0.5, anchor="center")
 
-    def login_user(self):
+    def login_admin(self):
+        """Handle admin login process"""
         email = self.email_entry.get().strip()
         password = self.password_entry.get()
 
@@ -230,31 +221,41 @@ class LoginApp:
 
         try:
             # Establish database connection
-            connection = mysql.connector.connect(**DB_CONFIG)
+            connection = mysql.connector.connect(**self.DB_CONFIG)
             cursor = connection.cursor(dictionary=True)
             
-            # Check user credentials
+            # Check admin credentials - specifically looking for admin role
             cursor.execute(
-                "SELECT userID, first_name, last_name, role FROM Users WHERE email = %s AND password = %s",
+                "SELECT user_id, first_name, last_name FROM Users WHERE email = %s AND password = %s AND role = 'admin'",
                 (email, hashed_password)
             )
             
-            user = cursor.fetchone()
+            admin = cursor.fetchone()
             
-            if user:
-                # Save user info for the session
-                self.save_user_session(user)
+            if admin:
+                # Save admin info for the session
+                self.save_admin_session(admin)
                 
                 # Show welcome message
-                messagebox.showinfo("Success", f"Welcome {user['first_name']} {user['last_name']}!")
+                messagebox.showinfo("Admin Access Granted", f"Welcome Admin {admin['first_name']} {admin['last_name']}!")
                 
                 # Close login window
                 self.root.destroy()
                 
-                # Open home page
-                self.open_home_page()
+                # Open admin dashboard
+                self.open_admin_dashboard()
             else:
-                messagebox.showerror("Login Failed", "Invalid email or password.")
+                # Check if the user exists but is not an admin
+                cursor.execute(
+                    "SELECT role FROM Users WHERE email = %s",
+                    (email,)
+                )
+                user = cursor.fetchone()
+                
+                if user and user['role'] != 'admin':
+                    messagebox.showerror("Access Denied", "You don't have admin privileges. Please use the regular user login.")
+                else:
+                    messagebox.showerror("Login Failed", "Invalid email or password.")
         
         except mysql.connector.Error as err:
             messagebox.showerror("Database Error", f"Database connection error: {str(err)}")
@@ -265,55 +266,34 @@ class LoginApp:
                 cursor.close()
                 connection.close()
 
-    def save_user_session(self, user):
-        """Save user session data to file"""
-        if self.remember_var.get():
-            # If you want to implement remember me functionality,
-            # you could save session info to a file here
-            pass
-            
-        # Create a session file with user data
+    def save_admin_session(self, admin):
+        """Save admin session data to file"""
         try:
             with open("session.txt", "w") as file:
-                file.write(f"userID={user['userID']}\n")
-                file.write(f"name={user['first_name']} {user['last_name']}\n")
-                file.write(f"role={user['role']}\n")
+                file.write(f"user_id={admin['user_id']}\n")
+                file.write(f"name={admin['first_name']} {admin['last_name']}\n")
+                file.write(f"role=admin\n")
         except Exception as e:
             print(f"Error saving session: {e}")
 
-    def forgot_password(self):
-        """Handle forgot password functionality"""
-        email = self.email_entry.get().strip()
-        
-        if not email:
-            messagebox.showinfo("Info", "Please enter your email address in the email field.")
-            return
-            
-        if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
-            messagebox.showwarning("Invalid Email", "Please enter a valid email address.")
-            return
-            
-        # Here you would implement the password reset functionality
-        # For now, just show a message
-        messagebox.showinfo("Password Reset", 
-                           f"Password reset instructions have been sent to {email} if an account exists.")
-
-    def open_signup(self):
+    def open_user_login(self):
+        """Open regular user login page"""
         try:
             # Close current window
             self.root.destroy()
             
-            # Run signup script
-            subprocess.Popen([sys.executable, "signup.py"])
+            # Run login script
+            subprocess.Popen([sys.executable, "login.py"])
         except Exception as e:
-            messagebox.showerror("Error", f"Unable to open signup page: {e}")
+            messagebox.showerror("Error", f"Unable to open user login page: {e}")
 
-    def open_home_page(self):
+    def open_admin_dashboard(self):
+        """Open admin dashboard"""
         try:
-            # Run home page script
-            subprocess.Popen([sys.executable, "home.py"])
+            # Run admin dashboard script
+            subprocess.Popen([sys.executable, "admin.py"])
         except Exception as e:
-            messagebox.showerror("Error", f"Unable to open home page: {e}")
+            messagebox.showerror("Error", f"Unable to open admin dashboard: {e}")
 
     @staticmethod
     def hash_password(password):
@@ -321,10 +301,10 @@ class LoginApp:
         return hashlib.sha256(password.encode()).hexdigest()
 
     def run(self):
-        """Run the login application"""
+        """Run the admin login application"""
         self.root.mainloop()
 
-# Run the login application
+# Run the admin login application
 if __name__ == "__main__":
-    login_app = LoginApp()
-    login_app.run()
+    admin_login = AdminLoginApp()
+    admin_login.run()
