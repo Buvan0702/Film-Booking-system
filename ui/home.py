@@ -6,9 +6,7 @@ import subprocess
 import mysql.connector
 from datetime import datetime
 from tkinter import messagebox
-
-# os.environ['TCL_LIBRARY'] = r"C:\Users\buvan\AppData\Local\Programs\Python\Python39\tcl\tcl8.6"
-# os.environ['TK_LIBRARY'] = r"C:\Users\buvan\AppData\Local\Programs\Python\Python39\tcl\tk8.6"
+import random
 
 class HomePage:
     def __init__(self, previous_window=None):
@@ -35,6 +33,11 @@ class HomePage:
         self.user_role = None
         self.load_user_session()
 
+        # Ensure images directory exists
+        if not os.path.exists("images"):
+            os.makedirs("images")
+            print("Created 'images' directory for movie posters.")
+
         # Create UI components
         self.create_sidebar()
         self.create_main_content()
@@ -45,7 +48,7 @@ class HomePage:
             with open("session.txt", "r") as file:
                 lines = file.readlines()
                 for line in lines:
-                    if "user_id=" in line:
+                    if "userID=" in line:
                         self.user_id = line.strip().split("=")[1]
                     elif "name=" in line:
                         self.user_name = line.strip().split("=")[1]
@@ -53,8 +56,7 @@ class HomePage:
                         self.user_role = line.strip().split("=")[1]
         except Exception as e:
             print(f"Error loading session: {e}")
-            # Redirect to login if session can't be loaded
-            self.logout()
+            # If session can't be loaded, continue without user info
 
     def create_sidebar(self):
         # Sidebar Frame
@@ -306,109 +308,152 @@ class HomePage:
             text_color="white"
         ).pack(anchor="w", pady=(0, 20))
 
-        # Movie Frame - scrollable horizontally
-        movie_frame = ctk.CTkFrame(parent, fg_color="black")
-        movie_frame.pack(fill="x", pady=(0, 50))
-
         # Get movies from database
         movies = self.get_now_showing_movies()
+
+        # Container to hold movie posters
+        movies_container = ctk.CTkScrollableFrame(parent, fg_color="black", orientation="horizontal", height=350)
+        movies_container.pack(fill="x", pady=(0, 50))
 
         # Create movie posters
         if movies:
             for i, movie in enumerate(movies):
-                # Get image path for the movie
-                image_path = f"images/{movie['movieID']}.jpg"
-                if not os.path.exists(image_path):
-                    image_path = f"images/default.jpg"  # Fallback to default image
-                
-                self.create_movie_poster(
-                    movie_frame, 
-                    movie['movieTitle'], 
-                    image_path,
-                    movie['movieID'],
-                    i
-                )
+                self.create_movie_poster(movies_container, movie, i)
         else:
             # Display message if no movies found
             ctk.CTkLabel(
-                movie_frame,
+                movies_container,
                 text="No movies currently showing. Check back later!",
                 font=("Arial", 16),
                 text_color="white"
             ).pack(pady=30)
 
-    def create_movie_poster(self, parent, title, image_path, movie_id, index):
-        frame = ctk.CTkFrame(parent, fg_color="black", corner_radius=10)
-        frame.grid(row=0, column=index, padx=15)
+    def create_movie_poster(self, parent, movie, index):
+        """Create a movie poster card"""
+        # Define colors for genre-based backgrounds (for when no image is available)
+        genre_colors = {
+            "Action": "#e63946",
+            "Drama": "#457b9d",
+            "Comedy": "#f4a261",
+            "Sci-Fi": "#2a9d8f",
+            "Crime": "#6a5acd",
+            "Adventure": "#e76f51",
+            "Romance": "#ff758f",
+            "Horror": "#343a40",
+            "Fantasy": "#4cc9f0",
+            "Thriller": "#5e548e"
+        }
+
+        # Get genre for determining color
+        genre = movie['movieGenre']
+        # Choose a color based on genre, or default to dark gray
+        bg_color = genre_colors.get(genre, "#333333")
+        
+        # Movie frame
+        movie_frame = ctk.CTkFrame(parent, fg_color="black", corner_radius=10, width=200)
+        movie_frame.grid(row=0, column=index, padx=15, pady=10, sticky="nw")
+
+        # Try to load movie poster image
+        image_path = f"images/{movie['movieID']}.jpg"
+        poster_image = None
         
         try:
-            # Try to load image
             if os.path.exists(image_path):
                 img = Image.open(image_path)
-                img = img.resize((180, 250))
-                photo = ImageTk.PhotoImage(img)
-                
-                poster = ctk.CTkLabel(frame, image=photo, text="")
-                poster.image = photo
-            else:
-                # Fallback if image not found
-                poster = ctk.CTkLabel(
-                    frame, 
-                    text=title,
-                    font=("Arial", 16, "bold"),
-                    width=180,
-                    height=250,
-                    corner_radius=10,
-                    fg_color="#333333",
-                    text_color="white"
-                )
+                img = img.resize((180, 250), Image.LANCZOS)
+                poster_image = ImageTk.PhotoImage(img)
         except Exception as e:
-            print(f"Error loading image for {title}: {e}")
-            # Placeholder if image loading fails
-            poster = ctk.CTkLabel(
-                frame, 
-                text=title,
-                font=("Arial", 16, "bold"),
-                width=180,
-                height=250,
-                corner_radius=10,
-                fg_color="#333333",
-                text_color="white"
+            print(f"Error loading image for {movie['movieTitle']}: {e}")
+            poster_image = None
+
+        # Create poster container - either image or colored placeholder
+        if poster_image:
+            poster = ctk.CTkLabel(movie_frame, image=poster_image, text="")
+            poster.image = poster_image  # Keep a reference
+            poster.pack(padx=0, pady=0)
+        else:
+            # Create a colored placeholder with movie title
+            poster_placeholder = ctk.CTkFrame(
+                movie_frame, 
+                width=180, 
+                height=250, 
+                fg_color=bg_color,
+                corner_radius=10
             )
-        
-        poster.pack(padx=0, pady=0)
+            poster_placeholder.pack(padx=0, pady=0)
+            poster_placeholder.pack_propagate(False)
+            
+            # Movie title in center of placeholder
+            ctk.CTkLabel(
+                poster_placeholder,
+                text=movie['movieTitle'],
+                font=("Arial", 16, "bold"),
+                text_color="white",
+                wraplength=160
+            ).place(relx=0.5, rely=0.5, anchor="center")
+            
+            # Genre badge at bottom
+            genre_badge = ctk.CTkFrame(
+                poster_placeholder,
+                fg_color="#333333",
+                corner_radius=5,
+                height=30
+            )
+            genre_badge.place(relx=0.5, rely=0.9, anchor="center")
+            genre_badge.pack_propagate(False)
+            
+            ctk.CTkLabel(
+                genre_badge,
+                text=genre,
+                font=("Arial", 12),
+                text_color="white"
+            ).pack(padx=10, pady=3)
+            
+            # Reference to use for click events
+            poster = poster_placeholder
         
         # Movie title label
         title_label = ctk.CTkLabel(
-            frame,
-            text=title,
+            movie_frame,
+            text=movie['movieTitle'],
             font=("Arial", 14, "bold"),
             text_color="white",
             wraplength=170
         )
         title_label.pack(pady=(5, 0))
         
+        # Rating label
+        rating_frame = ctk.CTkFrame(movie_frame, fg_color="#FFD700", corner_radius=5)  # Gold color without transparency
+        rating_frame.pack(pady=(5, 0))
+        
+        ctk.CTkLabel(
+            rating_frame,
+            text=f"★ {movie['movieRating']}/10",
+            font=("Arial", 12, "bold"),
+            text_color="black"
+        ).pack(padx=5, pady=2)
+        
         # Book button
         book_btn = ctk.CTkButton(
-            frame,
+            movie_frame,
             text="Book",
             font=("Arial", 12),
             fg_color="#d92525",
             hover_color="#b71c1c",
             height=30,
             width=80,
-            command=lambda m_id=movie_id, m_title=title: self.show_movie_details(m_id, m_title)
+            command=lambda m_id=movie['movieID'], m_title=movie['movieTitle']: self.show_movie_details(m_id, m_title)
         )
         book_btn.pack(pady=10)
         
         # Movie selection - make entire poster clickable
         def on_movie_select(e):
-            self.show_movie_details(movie_id, title)
+            self.show_movie_details(movie['movieID'], movie['movieTitle'])
         
         poster.bind("<Button-1>", on_movie_select)
         title_label.bind("<Button-1>", on_movie_select)
         
-        return frame
+        return movie_frame
 
     def create_featured_theaters(self, parent):
         # Featured Theaters Title
@@ -419,12 +464,12 @@ class HomePage:
             text_color="white"
         ).pack(anchor="w", pady=(0, 20))
 
+        # Get theaters from database
+        theaters = self.get_featured_theaters()
+
         # Theater container
         theater_container = ctk.CTkFrame(parent, fg_color="black")
         theater_container.pack(fill="x")
-
-        # Get theaters from database
-        theaters = self.get_featured_theaters()
 
         # Create theater items
         if theaters:
@@ -512,8 +557,9 @@ class HomePage:
                 subprocess.Popen([sys.executable, "admin.py"])
                 self.root.destroy()
             elif screen_name == "Home":
-                # Reopen Home page (current page)
-                self.root.deiconify()
+                # Refresh the home page
+                self.root.destroy()
+                subprocess.Popen([sys.executable, "home.py"])
         except Exception as e:
             print(f"Navigation error: {e}")
             # Reopen current window if navigation fails
@@ -604,7 +650,7 @@ class HomePage:
         ).pack(anchor="w")
         
         # Movie details
-        details = f"Genre: {movie['movieGenre']} | Duration: {movie['movieDuration']} | Rating: {movie['movieRating']}"
+        details = f"Genre: {movie['movieGenre']} | Duration: {movie['movieDuration']} mins | Rating: {movie['movieRating']}/10"
         ctk.CTkLabel(
             info_frame,
             text=details,
@@ -627,6 +673,7 @@ class HomePage:
             text="Book Tickets",
             font=("Arial", 14, "bold"),
             fg_color="#d92525",
+            text_color="white",
             hover_color="#b71c1c",
             corner_radius=5,
             height=40,
@@ -675,7 +722,7 @@ class HomePage:
             # Get movies with upcoming shows
             query = """
             SELECT DISTINCT m.* FROM Movies m
-            JOIN Show s ON m.movieID = s.movieID
+            JOIN `Show` s ON m.movieID = s.movieID
             WHERE s.showDate >= CURDATE()
             ORDER BY s.showDate
             LIMIT 8
@@ -684,14 +731,52 @@ class HomePage:
             cursor.execute(query)
             movies = cursor.fetchall()
             
+            if not movies:
+                # If no movies found, get all movies as fallback
+                cursor.execute("SELECT * FROM Movies LIMIT 8")
+                movies = cursor.fetchall()
+            
+            cursor.close()
+            connection.close()
+            
             return movies
         except Exception as e:
-            print(f"Database error: {e}")
-            return []
-        finally:
-            if 'connection' in locals() and connection.is_connected():
-                cursor.close()
-                connection.close()
+            print(f"Database error getting movies: {e}")
+            # Return placeholder data in case of database error
+            return self.get_placeholder_movies()
+
+    def get_placeholder_movies(self):
+        """Return placeholder movie data in case of database error"""
+        return [
+            {
+                'movieID': 1,
+                'movieTitle': 'The Shawshank Redemption',
+                'movieGenre': 'Drama',
+                'movieDuration': 142,
+                'movieRating': 9.3
+            },
+            {
+                'movieID': 2,
+                'movieTitle': 'The Godfather',
+                'movieGenre': 'Crime',
+                'movieDuration': 175,
+                'movieRating': 9.2
+            },
+            {
+                'movieID': 3,
+                'movieTitle': 'The Dark Knight',
+                'movieGenre': 'Action',
+                'movieDuration': 152,
+                'movieRating': 9.0
+            },
+            {
+                'movieID': 4,
+                'movieTitle': 'Pulp Fiction',
+                'movieGenre': 'Crime',
+                'movieDuration': 154,
+                'movieRating': 8.9
+            }
+        ]
 
     def get_featured_theaters(self):
         """Get featured theaters from database"""
@@ -702,7 +787,7 @@ class HomePage:
             # Get theaters with upcoming shows
             query = """
             SELECT DISTINCT t.* FROM Theaters t
-            JOIN Show s ON t.theaterID = s.theaterID
+            JOIN `Show` s ON t.theaterID = s.theaterID
             WHERE s.showDate >= CURDATE()
             LIMIT 4
             """
@@ -710,14 +795,39 @@ class HomePage:
             cursor.execute(query)
             theaters = cursor.fetchall()
             
+            if not theaters:
+                # If no theaters found, get all theaters
+                cursor.execute("SELECT * FROM Theaters LIMIT 4")
+                theaters = cursor.fetchall()
+            
+            cursor.close()
+            connection.close()
+            
             return theaters
         except Exception as e:
-            print(f"Database error: {e}")
-            return []
-        finally:
-            if 'connection' in locals() and connection.is_connected():
-                cursor.close()
-                connection.close()
+            print(f"Database error getting theaters: {e}")
+            # Return placeholder data in case of database error
+            return self.get_placeholder_theaters()
+
+    def get_placeholder_theaters(self):
+        """Return placeholder theater data in case of database error"""
+        return [
+            {
+                'theaterID': 1,
+                'theaterName': 'PVR Cinemas',
+                'theaterLocation': 'City Center Mall, Main Street'
+            },
+            {
+                'theaterID': 2,
+                'theaterName': 'INOX Movies',
+                'theaterLocation': 'Downtown Shopping Complex'
+            },
+            {
+                'theaterID': 3,
+                'theaterName': 'Cinepolis',
+                'theaterLocation': 'West End Mall, Park Avenue'
+            }
+        ]
 
     def get_movies_by_search(self, search_term):
         """Search for movies in database"""
@@ -735,14 +845,13 @@ class HomePage:
             cursor.execute(query, (search_param, search_param))
             movies = cursor.fetchall()
             
+            cursor.close()
+            connection.close()
+            
             return movies
         except Exception as e:
-            print(f"Database error: {e}")
+            print(f"Database error searching movies: {e}")
             return []
-        finally:
-            if 'connection' in locals() and connection.is_connected():
-                cursor.close()
-                connection.close()
 
     def get_shows_by_theater(self, theater_id):
         """Get shows for a specific theater"""
@@ -752,7 +861,7 @@ class HomePage:
             
             # Get upcoming shows for this theater
             query = """
-            SELECT * FROM Show 
+            SELECT * FROM `Show` 
             WHERE theaterID = %s AND showDate >= CURDATE()
             ORDER BY showDate, showTime
             """
@@ -760,14 +869,35 @@ class HomePage:
             cursor.execute(query, (theater_id,))
             shows = cursor.fetchall()
             
+            cursor.close()
+            connection.close()
+            
             return shows
         except Exception as e:
-            print(f"Database error: {e}")
-            return []
-        finally:
-            if 'connection' in locals() and connection.is_connected():
-                cursor.close()
-                connection.close()
+            print(f"Database error getting shows: {e}")
+            # Generate placeholder shows
+            return self.get_placeholder_shows(theater_id)
+
+    def get_placeholder_shows(self, theater_id):
+        """Generate placeholder show data"""
+        # Get today's date
+        today = datetime.now()
+        
+        # Generate 3 days of placeholder shows
+        shows = []
+        for day in range(3):
+            show_date = (today + timedelta(days=day)).strftime("%Y-%m-%d")
+            # Add 3 show times per day
+            for time in ["14:30", "18:00", "21:15"]:
+                shows.append({
+                    'showID': random.randint(1, 1000),
+                    'movieID': random.randint(1, 4),  # Random movie ID
+                    'theaterID': theater_id,
+                    'showDate': show_date,
+                    'showTime': time
+                })
+        
+        return shows
 
     def get_movie_by_id(self, movie_id):
         """Get movie details by ID"""
@@ -779,14 +909,17 @@ class HomePage:
             cursor.execute(query, (movie_id,))
             movie = cursor.fetchone()
             
+            cursor.close()
+            connection.close()
+            
             return movie
         except Exception as e:
-            print(f"Database error: {e}")
+            print(f"Database error getting movie details: {e}")
+            # Try to find movie in placeholder data
+            for movie in self.get_placeholder_movies():
+                if movie['movieID'] == movie_id:
+                    return movie
             return None
-        finally:
-            if 'connection' in locals() and connection.is_connected():
-                cursor.close()
-                connection.close()
 
     def run(self):
         """Run the home page application"""
@@ -794,8 +927,63 @@ class HomePage:
         if not os.path.exists("images"):
             os.makedirs("images")
             print("Created 'images' directory. Please add movie poster images.")
+            
+        # Attempt to create default movie posters if they don't exist
+        self.create_default_movie_posters()
         
         self.root.mainloop()
+        
+    def create_default_movie_posters(self):
+        """Create default movie posters if they don't exist"""
+        try:
+            # Define colors for genre-based backgrounds
+            genre_colors = {
+                "Action": (230, 57, 70),     # Red
+                "Drama": (69, 123, 157),     # Blue
+                "Comedy": (244, 162, 97),    # Orange
+                "Sci-Fi": (42, 157, 143),    # Teal
+                "Crime": (106, 90, 205),     # Purple
+                "Adventure": (231, 111, 81), # Coral
+                "Romance": (255, 117, 143),  # Pink
+                "Horror": (52, 58, 64),      # Dark Gray
+                "Fantasy": (76, 201, 240),   # Light Blue
+                "Thriller": (94, 84, 142)    # Dark Purple
+            }
+            
+            # Get movies from database
+            try:
+                connection = mysql.connector.connect(**self.DB_CONFIG)
+                cursor = connection.cursor(dictionary=True)
+                cursor.execute("SELECT * FROM Movies")
+                movies = cursor.fetchall()
+                cursor.close()
+                connection.close()
+            except Exception as e:
+                print(f"Error fetching movies for posters: {e}")
+                movies = self.get_placeholder_movies()
+            
+            # Create a simple colored image for each movie if poster doesn't exist
+            for movie in movies:
+                image_path = f"images/{movie['movieID']}.jpg"
+                
+                # Skip if poster already exists
+                if os.path.exists(image_path):
+                    continue
+                
+                # Get color based on genre, or default to gray
+                genre = movie.get('movieGenre', 'Drama')
+                color = genre_colors.get(genre, (51, 51, 51))  # Default dark gray
+                
+                # Create a new image with the genre color
+                width, height = 180, 250
+                img = Image.new('RGB', (width, height), color)
+                
+                # Save the image
+                img.save(image_path)
+                print(f"Created default poster for {movie['movieTitle']}")
+        
+        except Exception as e:
+            print(f"Error creating default movie posters: {e}")
 
 # Run the application
 if __name__ == "__main__":

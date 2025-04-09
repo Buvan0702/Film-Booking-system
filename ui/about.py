@@ -32,17 +32,24 @@ class AboutPage:
         try:
             with open("session.txt", "r") as file:
                 lines = file.readlines()
+                session_data = {}
                 for line in lines:
-                    if "userID=" in line:
-                        self.user_id = line.strip().split("=")[1]
-                    elif "name=" in line:
-                        self.user_name = line.strip().split("=")[1]
-                    elif "role=" in line:
-                        self.user_role = line.strip().split("=")[1]
+                    key, value = line.strip().split('=', 1)
+                    session_data[key] = value
+
+                # Use dictionary get method with a default value
+                self.user_id = session_data.get('user_id') or session_data.get('userID')
+                self.user_name = session_data.get('name')
+                self.user_role = session_data.get('role')
+                
+                # More robust validation
+                if not self.user_id:
+                    raise ValueError("No user ID found in session")
         except Exception as e:
             print(f"Error loading session: {e}")
-            # It's okay to proceed even if session can't be loaded
-            # This allows non-logged-in users to view the About page
+            # Instead of directly logging out, show a message and redirect to login
+            messagebox.showerror("Session Error", "Your session has expired. Please log in again.")
+            self.open_login()
 
     def create_sidebar(self):
         # Sidebar Frame
@@ -516,8 +523,11 @@ Whether you're booking tickets for the latest blockbuster or managing theater op
     def open_login(self):
         """Open login page"""
         try:
-            subprocess.Popen([sys.executable, "login.py"])
+            # Close current window
             self.root.destroy()
+            
+            # Open login page
+            subprocess.Popen([sys.executable, "login.py"])
         except Exception as e:
             messagebox.showerror("Error", f"Unable to open login page: {e}")
 
